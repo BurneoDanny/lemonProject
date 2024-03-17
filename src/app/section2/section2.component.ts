@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { gsap } from 'gsap';
-import { SplitText } from 'gsap-trial/SplitText';
+//import { SplitText } from 'gsap-trial/SplitText';
 import ScrollTrigger from 'gsap-trial/ScrollTrigger';
 
 @Component({
@@ -12,10 +12,11 @@ export class Section2Component implements OnInit {
 
 
   ngOnInit(): void {
-    gsap.registerPlugin(ScrollTrigger, SplitText);
-    const splitText = new SplitText('#titulo', { type: 'chars' });
-    const splitText2 = new SplitText('#section ul > li ', { type: 'chars' });
-    this.scrollAnimations(splitText.chars, splitText2.chars);
+    //gsap.registerPlugin(ScrollTrigger, SplitText);
+    gsap.registerPlugin(ScrollTrigger);
+    //const splitText = new SplitText('#titulo', { type: 'chars' });
+    //const splitText2 = new SplitText('#section ul > li ', { type: 'chars' });
+    //this.scrollAnimations(splitText.chars, splitText2.chars);
     gsap.to(".lemon", {
       duration: 1.1,
       scale: 1.1,
