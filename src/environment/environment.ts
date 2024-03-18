@@ -1,4 +1,4 @@
 export const environment = {
-    production: false,
-    MODEL_JSON_URL: 'http://localhost:3002'
+    production: true,
+    MODEL_JSON_URL: 'http://localhost:5000'
 };

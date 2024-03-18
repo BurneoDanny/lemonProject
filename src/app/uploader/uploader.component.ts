@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { gsap } from 'gsap';
-import * as tf from '@tensorflow/tfjs';
-import { environment } from '../../environment/environment';
-
+import axios from 'axios'; // Asegúrate de que Axios esté instalado e importado correctamente
+import { environment } from '../../environment/environment'; // Asegúrate de que la ruta de importación es correcta
 
 @Component({
   selector: 'app-uploader',
@@ -26,26 +25,11 @@ export class UploaderComponent implements OnInit, OnDestroy, AfterViewInit {
 
   flag = false;
 
-  model: any;
-
-  modelJSON = `${environment.MODEL_JSON_URL}/models/model.json`;
+  private currentIndex = 0;
 
   ngOnInit() {
     const interval = 5000;
     this.intervalId = setInterval(this.changeImage.bind(this), interval);
-
-    const loadModel = async () => {
-      console.log("Attempting to load model...");
-      try {
-        const modelo = await tf.loadLayersModel(this.modelJSON);
-        console.log("Model loaded:", modelo);
-        this.model = modelo;
-      } catch (e) {
-        console.log("[LOADING ERROR] info:", e);
-      }
-    };
-
-    loadModel();
   }
 
   ngOnDestroy() {
@@ -53,7 +37,6 @@ export class UploaderComponent implements OnInit, OnDestroy, AfterViewInit {
     clearInterval(this.intervalId);
   }
 
-  private currentIndex = 0;
   private changeImage() {
     const lemonImage = document.getElementById('lemonImage') as HTMLImageElement;
     const nextIndex = (this.currentIndex + 1) % this.imageUrls.length;
@@ -70,7 +53,6 @@ export class UploaderComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-
   ngAfterViewInit() {
     if (this.flag) {
       this.startGsapAnimation();
@@ -82,38 +64,32 @@ export class UploaderComponent implements OnInit, OnDestroy, AfterViewInit {
     gsap.from(lemonImage, { opacity: 0, duration: 0.5 });
   }
 
-  onFileSelected(event: any) {
+  async onFileSelected(event: any) { // Marcado como async
     const file: File = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        const result = document.getElementById('result') as HTMLImageElement;
-        result.src = e.target.result;
-        this.predictImage(file);
-      };
-      this.flag = true;
-      this.startGsapAnimation();
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const response = await axios.post(`${environment.MODEL_JSON_URL}/predict`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        console.log(response.data.prediction);
+        this.lemonResult = response.data.prediction;
+
+        // Lee y muestra la imagen seleccionada
+        const reader = new FileReader();
+        reader.onloadend = (e: any) => {
+          const result = document.getElementById('result') as HTMLImageElement;
+          result.src = e.target.result;
+        };
+        this.flag = true;
+        this.startGsapAnimation();
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error al enviar la imagen:', error);
+      }
     }
   }
-
-  async predictImage(file: any) {
-    const image = new Image();
-    image.src = URL.createObjectURL(file);
-    image.onload = async () => {
-
-      const tensor = tf.browser.fromPixels(image).toFloat();
-      const grayscale = tf.image.rgbToGrayscale(tensor);
-      const resized = tf.image.resizeNearestNeighbor(grayscale, [150, 150]).expandDims();
-
-
-      const prediction = this.model.predict(resized);
-      const result = await prediction.data();
-
-      this.lemonResult = result[0] > 0.5 ? 'El limon esta en buen estado' : 'El limon esta en mal estado';
-    };
-  };
-
-
-
-}  
+}
